@@ -22,7 +22,7 @@
 
   button.addEventListener('click', () => {
     if (popup && !popup.closed) popup.close();
-    resetConnection();
+    if (peer) resetConnection();
     channel = crypto.randomUUID();
     backend.searchParams.set('channel', channel);
     popup = window.open(backend.href, 'HelpyFinanceDrive', 'popup,width=610,height=680');

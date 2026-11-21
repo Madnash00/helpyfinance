@@ -1,19 +1,22 @@
 # Collegare Helpy Finance a Google Drive
 
-Helpy Finance v1.8 è una Web App Google Apps Script. Il file JSON su Drive è la fonte comune per movimenti, classificazioni, regole, Budget, Forecast ed eliminazioni. La Web App carica la revisione attuale all'apertura. Il tema resta nel browser. Le modifiche sono inviate premendo **Salva su Drive**.
+La [dashboard](https://madnash00.github.io/helpyfinance/) è pubblicata su GitHub Pages da `main:/docs`. Google Apps Script espone le operazioni sul database JSON esistente su Google Drive. Il browser apre una finestra Google per riutilizzare la sessione autorizzata. Il gateway scambia messaggi con l'origine GitHub Pages e con la singola sessione aperta dalla dashboard.
 
-## Aggiornare la Web App esistente
-
-1. Esegui i controlli qui sotto. Se cambia il frontend, genera il nuovo `bridge-payload.js`, confronta il risultato con quello versionato e inserisci il file aggiornato in un commit pubblico.
-2. In `apps-script/Bridge.html` aggiorna l’URL del payload al commit esatto appena pubblicato, quindi aggiorna l’attributo `integrity` con lo SHA-384 Base64 del file. Mantieni `crossorigin="anonymous"`.
-3. Nel progetto Google Apps Script già in uso aggiorna `Bridge.html` e, quando cambia il backend, `Code.gs`. Mantieni le proprietà `HF_DATABASE_FILE_ID` e `HF_DATABASE_FOLDER_ID`, che puntano al database e alla cartella operativi, e conserva gli account autorizzati configurati nel progetto.
-4. In **Gestisci deployment** aggiorna il deployment Web App esistente con **Nuova versione** ed esecuzione come utente che accede all’app. Apri lo stesso URL `/exec` e verifica la revisione letta da Drive.
-
-Per calcolare il valore da anteporre con `sha384-` in `integrity`:
+## Aggiornare il frontend
 
 ```sh
-openssl dgst -sha384 -binary apps-script/bridge-payload.js | openssl base64 -A
+python3 scripts/build_drive.py --pages --payload dist/pages.js
+cp dist/pages.js docs/pages.js
+node --check docs/pages.js
+git add docs/pages.js
+python3 tests/check_public.py
 ```
+
+Commit e push su `main` attivano la pubblicazione. I dati operativi e le proprietà Apps Script rimangono in Google.
+
+## Aggiornare il backend
+
+Aggiorna `Code.gs` e `Gateway.html` nel progetto Apps Script esistente. In **Gestisci deployment** aggiorna il deployment Web App con una nuova versione, con esecuzione come utente che accede all'app. Mantieni l'URL `/exec` usato da `pages/transport.js`, le proprietà del database e i permessi del file Drive.
 
 ## Configurare una nuova installazione
 
@@ -30,9 +33,9 @@ La build offline v1.7 rimane disponibile con il precedente comando `scripts/stan
 ```sh
 python3 tests/check_public.py
 node tests/drive.cjs
-python3 scripts/build_drive.py --payload dist/bridge-payload.js
-node --check dist/bridge-payload.js
-cmp dist/bridge-payload.js apps-script/bridge-payload.js
+python3 scripts/build_drive.py --pages --payload dist/pages-verifica.js
+node --check dist/pages-verifica.js
+cmp dist/pages-verifica.js docs/pages.js
 ```
 
 Il test simula il protocollo Apps Script. Per il collaudo sul servizio reale, apri la Web App con l'account proprietario, autorizza Google quando richiesto, verifica la lettura e la revisione, poi ripeti con un secondo browser per verificare un conflitto su dati di prova.

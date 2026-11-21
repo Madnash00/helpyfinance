@@ -13,9 +13,9 @@ Web App finanziaria di Helpy Group. Il ramo `main` contiene il codice della dash
 
 ## Web App online
 
-Google Apps Script esegue la Web App. Il database operativo è il JSON nella cartella Google Drive **Helpy Finance DB**. Nel repository pubblico sono versionati sorgenti e dati dimostrativi. Le proprietà dello script identificano il database e gli account abilitati.
+La dashboard è servita da [GitHub Pages](https://madnash00.github.io/helpyfinance/) e Google Apps Script gestisce l’accesso a Drive. Il database operativo è il JSON nella cartella Google Drive **Helpy Finance DB**. Nel repository pubblico sono versionati sorgenti e dati dimostrativi. Le proprietà dello script identificano il database e gli account abilitati.
 
-Apri l’URL `/exec` del deployment esistente. La dashboard legge la revisione corrente e invia le modifiche premendo **Salva su Drive**. Per aggiornare la Web App conservando il database e l’indirizzo attuali, segui la [procedura di rilascio](docs/GOOGLE_DRIVE.md).
+Apri la dashboard e seleziona **Collega Google Drive**. Lascia aperta la finestra Google mentre lavori. La dashboard legge la revisione corrente e invia le modifiche premendo **Salva su Drive**. Per aggiornare la Web App segui la [procedura di rilascio](docs/GOOGLE_DRIVE.md).
 
 ## Demo locale v1.7
 
