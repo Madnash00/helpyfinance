@@ -12,7 +12,7 @@ git add docs/pages.js
 python3 tests/check_public.py
 ```
 
-Commit e push su `main` attivano la pubblicazione. I dati operativi e le proprietà Apps Script rimangono in Google.
+Aggiorna anche il parametro `v` nel riferimento a `pages.js` in `docs/index.html` (ad esempio con i primi otto caratteri dello SHA-256 del nuovo file). Commit e push su `main` attivano la pubblicazione. I dati operativi e le proprietà Apps Script rimangono in Google.
 
 ## Aggiornare il backend
 
