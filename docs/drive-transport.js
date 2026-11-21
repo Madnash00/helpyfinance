@@ -2,7 +2,7 @@
   'use strict';
 
   const enrollmentUrl = 'https://script.google.com/macros/s/AKfycbzJ9yRfI3jp_M2oKSVLd2XkjsB8f5GR1lh63cLkJ0x0hLxcN8CS6SqiMWj51WmRhKItSw/exec';
-  const apiUrl = '';
+  const apiUrl = 'https://script.google.com/macros/s/AKfycbxh4pfCNfVCz_hri5GnzpwNIvocvhdcBfeNNjHm4mTtxE0q4ns_txSvvswk4mCZ19vrNw/exec';
   const storageKey = 'helpyfinance:drive-session';
   let token;
   let enrollment;
