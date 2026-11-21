@@ -88,6 +88,7 @@ def assemble(source):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output", type=Path)
+    parser.add_argument("--payload", action="store_true", help="Genera solo il JavaScript per il caricatore Apps Script.")
     args = parser.parse_args()
     from tempfile import TemporaryDirectory
     with TemporaryDirectory() as directory:
@@ -95,7 +96,10 @@ def main():
         build(plain, None)
         source = assemble(plain.read_text(encoding='utf-8'))
     payload = base64.b64encode(gzip.compress(source.encode(), mtime=0)).decode('ascii')
-    write_new(args.output, SHELL.replace('@@GZIP@@', payload).encode())
+    output = SHELL.replace('@@GZIP@@', payload)
+    if args.payload:
+        output = output.split('<script>\n', 1)[1].split('</script>', 1)[0]
+    write_new(args.output, output.encode('utf-8'))
 
 
 if __name__ == "__main__":
