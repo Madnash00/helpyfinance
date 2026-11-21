@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="it">
+<head><base target="_top"><meta charset="utf-8"></head>
+<body>
+<h1>Helpy Finance · Google Drive</h1>
+<p id="status" role="status">Collegamento a GitHub Pages…</p>
+<script>
+(() => {
+  const origin = 'https://madnash00.github.io';
+  const channel = '<?= channel ?>';
+  const status = document.getElementById('status');
+  const peer = window.top.opener;
+  const methods = new Set(['getBridgeConfig', 'loadDatabase', 'saveDatabase', 'initializeDatabase']);
+  if (!peer || !channel) {
+    status.textContent = 'Apri Helpy Finance su GitHub Pages per collegare Google Drive.';
+    const link = document.createElement('a');
+    link.href = origin + '/helpyfinance/';
+    link.textContent = 'Apri Helpy Finance';
+    document.body.append(link);
+    return;
+  }
+
+  window.addEventListener('message', event => {
+    if (event.origin !== origin || event.source !== peer) return;
+    const request = event.data;
+    if (!request || request.channel !== channel || request.type !== 'hf-request' ||
+        !Number.isSafeInteger(request.id) || !methods.has(request.method) ||
+        !Array.isArray(request.args)) return;
+    function reply(fields) {
+      peer.postMessage({ ...fields, type: 'hf-response', id: request.id, channel }, origin);
+    }
+    google.script.run
+      .withSuccessHandler(value => reply({ ok: true, value }))
+      .withFailureHandler(error => reply({ ok: false, error: String(error?.message || error) }))
+      [request.method](...request.args);
+  });
+
+  peer.postMessage({ type: 'hf-ready', channel }, origin);
+  status.textContent = 'Google Drive collegato. Torna alla dashboard e lascia aperta questa finestra.';
+})();
+</script>
+</body>
+</html>

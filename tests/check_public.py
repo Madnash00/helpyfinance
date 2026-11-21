@@ -21,7 +21,7 @@ for filename in filter(None, tracked):
     ):
         raise SystemExit(f"File riservato nell'indice Git: {filename}")
     data = subprocess.check_output(["git", "show", f":{filename}"])
-    if filename == "apps-script/bridge-payload.js":
+    if filename in {"apps-script/bridge-payload.js", "docs/pages.js"}:
         embedded = re.search(rb"atob\('([A-Za-z0-9+/=]+)'\)", data)
         if not embedded:
             raise SystemExit(f"Formato del frontend compilato inatteso: {filename}")

@@ -4,6 +4,7 @@ import argparse
 import base64
 import gzip
 import re
+from tempfile import TemporaryDirectory
 from pathlib import Path
 
 from standalone import ROOT, build, write_new
@@ -89,12 +90,18 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output", type=Path)
     parser.add_argument("--payload", action="store_true", help="Genera solo il JavaScript per il caricatore Apps Script.")
+    parser.add_argument("--pages", action="store_true", help="Genera la Web App per GitHub Pages.")
     args = parser.parse_args()
-    from tempfile import TemporaryDirectory
     with TemporaryDirectory() as directory:
         plain = Path(directory) / 'base.html'
         build(plain, None)
         source = assemble(plain.read_text(encoding='utf-8'))
+    if args.pages:
+        transport = (ROOT / 'pages/transport.js').read_text(encoding='utf-8')
+        source = replace_once(source, '<strong id="hf-drive-status"', '<button type="button" id="hf-connect">Collega Google Drive</button><strong id="hf-drive-status"')
+        source = replace_once(source, '</section><div id="root"></div>', '</section><div id="root"></div><script>' + transport + '</script>')
+        source = replace_once(source, '    return new Promise((resolve, reject) => {\n      google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[method](...args);\n    });', '    return window.HFGithubDrive.request(method, ...args);')
+        source = replace_once(source, 'Collegamento a Google Drive…</strong>', 'Collega Google Drive per caricare i dati.</strong>')
     payload = base64.b64encode(gzip.compress(source.encode(), mtime=0)).decode('ascii')
     output = SHELL.replace('@@GZIP@@', payload)
     if args.payload:

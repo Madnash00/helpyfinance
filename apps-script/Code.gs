@@ -25,10 +25,12 @@ const HF_CONFIG = Object.freeze({
 });
 
 
-function doGet() {
+function doGet(event) {
   requireAuthorizedUser_();
-  return HtmlService.createTemplateFromFile('Bridge')
-    .evaluate()
+  const template = HtmlService.createTemplateFromFile('Gateway');
+  const channel = String(event?.parameter?.channel || '');
+  template.channel = /^[0-9a-f-]{36}$/.test(channel) ? channel : '';
+  return template.evaluate()
     .setTitle('Helpy Finance · Google Drive')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
