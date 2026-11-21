@@ -1,6 +1,6 @@
 # Collegare Helpy Finance a Google Drive
 
-La [dashboard](https://madnash00.github.io/helpyfinance/) è pubblicata su GitHub Pages da `main:/docs`. Google Apps Script espone le operazioni sul database JSON esistente su Google Drive. Il frontend apre il canale Google all’avvio, in parallelo al caricamento della dashboard, e legge la revisione con un’unica richiesta. Se il browser impedisce a Google di inviare la sessione nel contesto incorporato, la stessa scheda apre il gateway Apps Script. Il gateway usa la sessione Google come sito principale e carica l’interfaccia pubblicata su GitHub Pages. Il browser ricorda questa modalità, senza memorizzare token o dati del database. Il gateway scambia messaggi con l'origine GitHub Pages e con la singola sessione aperta dalla dashboard.
+La [dashboard](https://madnash00.github.io/helpyfinance/) è pubblicata su GitHub Pages da `main:/docs`. Google Apps Script espone le operazioni sul database JSON esistente su Google Drive. Dopo il primo accesso, il browser del proprietario conserva una sessione di 30 giorni. Il frontend carica i dati in un’unica richiesta all’API. Le sessioni si possono revocare eliminando le proprietà con prefisso `HF_BROWSER_SESSION_` nel progetto Apps Script.
 
 ## Aggiornare il frontend
 
@@ -16,7 +16,11 @@ Aggiorna anche il parametro `v` nel riferimento a `pages.js` in `docs/index.html
 
 ## Aggiornare il backend
 
-Aggiorna `Code.gs` e `Gateway.html` nel progetto Apps Script esistente. In **Gestisci deployment** aggiorna il deployment Web App con una nuova versione, con esecuzione come utente che accede all'app. Mantieni l'URL `/exec` usato da `docs/drive-transport.js`, le proprietà del database e i permessi del file Drive.
+Carica `Code.gs`, `Session.gs`, `Gateway.html` ed `Enrollment.html` nel progetto Apps Script esistente. Usa due versioni immutabili dello stesso progetto per condividere la configurazione privata e il lock del database.
+
+1. Per l’autorizzazione del browser mantieni `HF_API_ONLY = false`. Aggiorna il deployment attuale, eseguito come l’utente che accede, e conserva il suo URL in `enrollmentUrl`.
+2. Per l’API, salva una versione separata con `HF_API_ONLY = true`. Pubblica un nuovo deployment eseguito come proprietario e raggiungibile senza login Google. Le operazioni sul database richiedono sempre la sessione rilasciata nel passaggio 1.
+3. Prima di pubblicare GitHub Pages, verifica che una richiesta senza sessione riceva `SESSION_REQUIRED`. Imposta `apiUrl` in `docs/drive-transport.js` e aggiorna il relativo parametro `v` in `docs/index.html`. Verifica anche l’accesso e il caricamento con un browser reale.
 
 ## Configurare una nuova installazione
 
@@ -33,6 +37,7 @@ La build offline v1.7 rimane disponibile con il precedente comando `scripts/stan
 ```sh
 python3 tests/check_public.py
 node tests/drive.cjs
+node tests/session.cjs
 python3 scripts/build_drive.py --pages --payload dist/pages-verifica.js
 node --check dist/pages-verifica.js
 cmp dist/pages-verifica.js docs/pages.js

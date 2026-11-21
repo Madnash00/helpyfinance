@@ -25,8 +25,21 @@ const HF_CONFIG = Object.freeze({
 });
 
 
+// Publish a separate, immutable version with this flag set for the API deployment.
+const HF_API_ONLY = false;
+
 function doGet(event) {
-  requireAuthorizedUser_();
+  if (HF_API_ONLY) return sessionJson_({ ok: false, error: 'METHOD_NOT_ALLOWED' });
+  const user = requireAuthorizedUser_();
+  if (event?.parameter?.transport === 'enroll') {
+    const digest = String(event.parameter.digest || '');
+    if (user !== HF_CONFIG.OWNER_EMAIL || !/^[0-9a-f]{64}$/.test(digest)) {
+      throw new Error('Collegamento non autorizzato.');
+    }
+    const enrollment = HtmlService.createTemplateFromFile('Enrollment');
+    enrollment.digest = digest;
+    return enrollment.evaluate().setTitle('Helpy Finance · Primo accesso');
+  }
   const template = HtmlService.createTemplateFromFile('Gateway');
   const channel = String(event?.parameter?.channel || '');
   template.channel = /^[0-9a-f-]{36}$/.test(channel) ? channel : '';
@@ -41,7 +54,10 @@ function doGet(event) {
 
 function getBridgeConfig() {
 
-  const user = requireAuthorizedUser_();
+  return bridgeConfigFor_(requireAuthorizedUser_());
+}
+
+function bridgeConfigFor_(user) {
   const properties = PropertiesService.getScriptProperties();
   const fileId = properties.getProperty(HF_CONFIG.DB_FILE_ID_PROPERTY);
   const date = properties.getProperty('HF_BALANCE_REFERENCE_DATE');
@@ -59,7 +75,11 @@ function getBridgeConfig() {
 
 
 function bootstrapDashboard() {
-  const config = getBridgeConfig();
+  return bootstrapFor_(requireAuthorizedUser_());
+}
+
+function bootstrapFor_(user) {
+  const config = bridgeConfigFor_(user);
   if (!config.initialized) return config;
   const file = requireDatabaseFile_();
   const database = readDatabase_(file);
@@ -138,7 +158,10 @@ function loadDatabase() {
 
 function saveDatabase(clientData, expectedRevision) {
 
-  const user = requireAuthorizedUser_();
+  return saveDatabaseFor_(requireAuthorizedUser_(), clientData, expectedRevision);
+}
+
+function saveDatabaseFor_(user, clientData, expectedRevision) {
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
@@ -215,6 +238,7 @@ function createManualBackup() {
 
 
 function requireAuthorizedUser_() {
+  if (HF_API_ONLY) throw new Error('ACCESS_DENIED');
 
   const email = String(Session.getActiveUser().getEmail() || '')
     .trim()

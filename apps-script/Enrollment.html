@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="it">
+<head><meta charset="utf-8"><meta name="referrer" content="no-referrer"></head>
+<body>
+<h1>Helpy Finance</h1>
+<p>Conferma solo se hai appena avviato il collegamento dalla tua dashboard su GitHub Pages.</p>
+<button type="button" id="enroll">Autorizza questo browser</button>
+<p id="status" role="status"></p>
+<script>
+  const button = document.getElementById('enroll');
+  const status = document.getElementById('status');
+  button.addEventListener('click', () => {
+    button.disabled = true;
+    google.script.run
+      .withSuccessHandler(() => {
+        status.textContent = 'Browser autorizzato. Puoi chiudere questa scheda e tornare alla dashboard.';
+        window.top.close();
+      })
+      .withFailureHandler(() => {
+        status.textContent = 'Collegamento non riuscito. Riprova.';
+        button.disabled = false;
+      })
+      .enrollBrowser('<?= digest ?>');
+  });
+</script>
+</body>
+</html>
