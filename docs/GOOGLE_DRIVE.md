@@ -16,7 +16,7 @@ Aggiorna anche il parametro `v` nel riferimento a `pages.js` in `docs/index.html
 
 ## Aggiornare il backend
 
-Carica `Code.gs`, `Session.gs`, `Gateway.html` ed `Enrollment.html` nel progetto Apps Script esistente. Usa due versioni immutabili dello stesso progetto per condividere la configurazione privata e il lock del database.
+Carica `Code.gs`, `Session.gs` ed `Enrollment.html` nel progetto Apps Script esistente. Usa due versioni immutabili dello stesso progetto per condividere la configurazione privata e il lock del database.
 
 1. Per l’autorizzazione del browser mantieni `HF_API_ONLY = false`. Aggiorna il deployment attuale, eseguito come l’utente che accede, e conserva il suo URL in `enrollmentUrl`.
 2. Per l’API, salva una versione separata con `HF_API_ONLY = true`. Pubblica un nuovo deployment eseguito come proprietario e raggiungibile senza login Google. Le operazioni sul database richiedono sempre la sessione rilasciata nel passaggio 1.

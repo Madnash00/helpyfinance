@@ -30,25 +30,19 @@ const HF_API_ONLY = false;
 
 function doGet(event) {
   if (HF_API_ONLY) return sessionJson_({ ok: false, error: 'METHOD_NOT_ALLOWED' });
-  const user = requireAuthorizedUser_();
-  if (event?.parameter?.transport === 'enroll') {
-    const digest = String(event.parameter.digest || '');
-    if (user !== HF_CONFIG.OWNER_EMAIL || !/^[0-9a-f]{64}$/.test(digest)) {
-      throw new Error('Collegamento non autorizzato.');
-    }
-    const enrollment = HtmlService.createTemplateFromFile('Enrollment');
-    enrollment.digest = digest;
-    return enrollment.evaluate().setTitle('Helpy Finance · Primo accesso');
+  if (event?.parameter?.transport !== 'enroll') {
+    return HtmlService.createHtmlOutput(
+      '<p><a target="_top" href="https://madnash00.github.io/helpyfinance/?from=apps-script">Apri Helpy Finance su GitHub Pages</a></p>'
+    ).setTitle('Helpy Finance');
   }
-  const template = HtmlService.createTemplateFromFile('Gateway');
-  const channel = String(event?.parameter?.channel || '');
-  template.channel = /^[0-9a-f-]{36}$/.test(channel) ? channel : '';
-  template.embedded = template.channel && event?.parameter?.transport === 'iframe' ? 'yes' : '';
-  template.hosted = template.channel && event?.parameter?.transport === 'host' ? 'yes' : '';
-  const page = template.evaluate()
-    .setTitle('Helpy Finance · Google Drive')
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
-  return template.embedded ? page.setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL) : page;
+  const user = requireAuthorizedUser_();
+  const digest = String(event.parameter.digest || '');
+  if (user !== HF_CONFIG.OWNER_EMAIL || !/^[0-9a-f]{64}$/.test(digest)) {
+    throw new Error('Collegamento non autorizzato.');
+  }
+  const enrollment = HtmlService.createTemplateFromFile('Enrollment');
+  enrollment.digest = digest;
+  return enrollment.evaluate().setTitle('Helpy Finance · Primo accesso');
 }
 
 
