@@ -20,14 +20,15 @@
   }
   resetConnection();
 
-  button.addEventListener('click', () => {
+  function connect() {
     if (popup && !popup.closed) popup.close();
     if (peer) resetConnection();
     channel = crypto.randomUUID();
     backend.searchParams.set('channel', channel);
     popup = window.open(backend.href, 'HelpyFinanceDrive', 'popup,width=610,height=680');
     status.textContent = popup ? 'Completa il collegamento nella finestra Google.' : 'Consenti i popup e riprova.';
-  });
+  }
+  button.addEventListener('click', connect);
 
   function googleOrigin(origin) {
     return /^https:\/\/(?:script\.google\.com|(?:[a-z0-9-]+-)?script\.googleusercontent\.com)$/.test(origin);
@@ -53,6 +54,13 @@
   });
 
   window.HFGithubDrive = {
+    connect,
+    mountControls(host) {
+      if (!host) return;
+      const controls = button.closest('.hf-drive-controls');
+      host.append(controls);
+      controls.hidden = false;
+    },
     async request(method, ...args) {
       await ready;
       if (!peer || !popup || popup.closed) {
