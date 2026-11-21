@@ -4,13 +4,24 @@
   const backend = new URL('https://script.google.com/macros/s/AKfycbzJ9yRfI3jp_M2oKSVLd2XkjsB8f5GR1lh63cLkJ0x0hLxcN8CS6SqiMWj51WmRhKItSw/exec');
   const pending = new Map();
   let channel, target, peer, peerOrigin, timer, ready, resolveReady;
-  let frame, host, next = 0;
+  let frame, host, loadingLink, next = 0;
   let connected = false;
   let waiting = false;
 
   function notify() {
-    if (!host) return;
-    host.querySelector('#hf-drive-auth').hidden = connected || Boolean(timer);
+    const needsAuthorization = !connected && !timer;
+    if (loadingLink) loadingLink.hidden = !needsAuthorization;
+    if (host) host.querySelector('#hf-drive-auth').hidden = !needsAuthorization || Boolean(loadingLink);
+  }
+
+  function authorizationRequired() {
+    timer = null;
+    notify();
+  }
+
+  function authorize(event) {
+    event.preventDefault();
+    begin('popup');
   }
 
   function begin(mode) {
@@ -29,17 +40,19 @@
       frame.hidden = true;
       frame.title = 'Servizio Google Drive';
       frame.src = backend.href;
+      frame.addEventListener('load', () => {
+        if (connected || !frame?.isConnected || !timer) return;
+        clearTimeout(timer);
+        timer = setTimeout(authorizationRequired, 800);
+      }, { once: true });
       document.body.append(frame);
       target = frame.contentWindow;
     } else {
       frame?.remove();
       target = window.open(backend.href, 'HelpyFinanceDrive', 'popup,width=610,height=680');
     }
-    timer = setTimeout(() => {
-      timer = null;
-      // Keep the initial request waiting so reauthorization can resume it.
-      notify();
-    }, mode === 'iframe' ? 7000 : 12000);
+    // Keep the initial request waiting so reauthorization can resume it.
+    timer = setTimeout(authorizationRequired, mode === 'iframe' ? 4000 : 12000);
     notify();
   }
 
@@ -80,15 +93,17 @@
   }
 
   window.HFGithubDrive = {
+    authorize,
+    mountLoading(link) {
+      loadingLink = link;
+      notify();
+    },
     mountFeedback(element) {
       if (!element) return;
       host = document.querySelector('.hf-drive-controls');
       element.append(host);
       host.hidden = false;
-      host.querySelector('#hf-drive-auth').addEventListener('click', event => {
-        event.preventDefault();
-        begin('popup');
-      });
+      host.querySelector('#hf-drive-auth').addEventListener('click', authorize);
       notify();
     },
     async request(method, ...args) {

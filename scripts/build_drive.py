@@ -106,6 +106,15 @@ def prepare_pages(source):
     footer = '                  (0, L.jsxs)("footer", {\n                    children: ['
     source = replace_once(source, footer, footer + """
                       (0, L.jsx)("div", { ref: window.HFGithubDrive.mountFeedback }),""")
+    loading = '                            (0, L.jsx)(Jl, {}),\n                            "Caricamento contabilit\\xE0\\u2026",'
+    source = replace_once(source, loading, loading + """
+                            (0, L.jsx)("a", {
+                              ref: window.HFGithubDrive.mountLoading,
+                              href: "#",
+                              hidden: true,
+                              onClick: window.HFGithubDrive.authorize,
+                              children: "Autorizza Google",
+                            }),""")
     return source
 
 
