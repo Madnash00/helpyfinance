@@ -30,9 +30,11 @@ function doGet(event) {
   const template = HtmlService.createTemplateFromFile('Gateway');
   const channel = String(event?.parameter?.channel || '');
   template.channel = /^[0-9a-f-]{36}$/.test(channel) ? channel : '';
-  return template.evaluate()
+  template.embedded = template.channel && event?.parameter?.transport === 'iframe' ? 'yes' : '';
+  const page = template.evaluate()
     .setTitle('Helpy Finance · Google Drive')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+  return template.embedded ? page.setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL) : page;
 }
 
 
@@ -52,6 +54,15 @@ function getBridgeConfig() {
     initialized: Boolean(fileId),
     reference: /^\d{4}-\d{2}-\d{2}$/.test(date || '') && Number.isFinite(amount) ? { date, amount } : null
   };
+}
+
+
+function bootstrapDashboard() {
+  const config = getBridgeConfig();
+  if (!config.initialized) return config;
+  const file = requireDatabaseFile_();
+  const database = readDatabase_(file);
+  return { ...config, schemaVersion: database.schemaVersion, revision: database.revision, data: database.data };
 }
 
 

@@ -13,6 +13,9 @@
   const saveButton = document.getElementById('hf-drive-save');
   const download = document.getElementById('hf-drive-download');
   const seed = document.getElementById('hf-drive-seed');
+  const automatic = !!window.HFGithubDrive;
+  let saveTimer;
+  let retry = 0;
   let data;
   let revision;
   let generation = 0;
@@ -21,6 +24,7 @@
   let conflicted = false;
 
   function call(method, ...args) {
+    if (automatic) return window.HFGithubDrive.request(method, ...args);
     return new Promise((resolve, reject) => {
       google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[method](...args);
     });
@@ -28,6 +32,7 @@
 
   function message(text) {
     status.textContent = text;
+    if (automatic) status.hidden = !text;
   }
 
   function validState(state) {
@@ -44,27 +49,33 @@
     data = response.data;
     revision = response.revision;
     seed.hidden = true;
-    message('Drive · Revisione ' + revision);
+    message(automatic ? '' : 'Drive · Revisione ' + revision);
     return data.state;
   }
 
   function controls() {
     const changed = generation !== savedGeneration;
-    saveButton.disabled = !changed || saving || conflicted;
-    download.hidden = !changed;
+    if (saveButton) saveButton.disabled = !changed || saving || conflicted;
+    download.hidden = !changed || (automatic && !conflicted && retry < 3);
+  }
+
+  function scheduleSave(delay = 650) {
+    if (!automatic || saving || conflicted) return;
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(save, delay);
   }
 
   window.HFDrive = {
     async load() {
       try {
-        const config = await call('getBridgeConfig');
+        const config = await call(automatic ? 'bootstrapDashboard' : 'getBridgeConfig');
         this.reference = config.reference;
         if (!config.initialized) {
           seed.hidden = !config.isOwner;
           throw new Error('Database Drive da inizializzare con un backup Helpy Finance.');
         }
-        const state = install(await call('loadDatabase'));
-        saveButton.hidden = false;
+        const state = install(automatic ? config : await call('loadDatabase'));
+        if (saveButton) saveButton.hidden = false;
         controls();
         return state;
       } catch (error) {
@@ -83,18 +94,22 @@
         data[field] = JSON.parse(value);
         generation += 1;
         controls();
-        if (!saving && !conflicted) message('Drive · Modifiche da salvare');
+        if (!saving && !conflicted) {
+          retry = 0;
+          message(automatic ? '' : 'Drive · Modifiche da salvare');
+          scheduleSave();
+        }
       },
     },
   };
 
-  saveButton.addEventListener('click', async () => {
+  async function save() {
     if (saving || conflicted || generation === savedGeneration) return;
     saving = true;
     const snapshot = JSON.parse(JSON.stringify(data));
     const savingGeneration = generation;
     controls();
-    message('Drive · Salvataggio in corso…');
+    if (!automatic) message('Drive · Salvataggio in corso…');
     try {
       const response = await call('saveDatabase', snapshot, revision);
       if (!response?.ok || response.revision !== revision + 1) {
@@ -102,16 +117,24 @@
       }
       revision = response.revision;
       savedGeneration = savingGeneration;
-      message('Drive · Revisione ' + revision +
+      retry = 0;
+      message(automatic ? '' : 'Drive · Revisione ' + revision +
         (generation !== savedGeneration ? ' · Modifiche da salvare' : ' · Salvato'));
     } catch (error) {
       const detail = String(error?.message || error);
       conflicted = detail.includes('CONFLICT');
+      retry += 1;
       message(conflicted ? 'Un altro utente ha salvato. Scarica le tue modifiche prima di ricaricare.' : detail);
     } finally {
       saving = false;
       controls();
+      if (generation !== savedGeneration && retry < 3) scheduleSave(retry ? 1500 * retry : 650);
     }
+  }
+  saveButton?.addEventListener('click', save);
+  if (automatic) document.addEventListener('hf-drive-reconnected', () => {
+    retry = 0;
+    if (generation !== savedGeneration) scheduleSave(0);
   });
 
   download.addEventListener('click', () => {

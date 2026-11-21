@@ -9,8 +9,8 @@
   const origin = 'https://madnash00.github.io';
   const channel = '<?= channel ?>';
   const status = document.getElementById('status');
-  const peer = window.top.opener;
-  const methods = new Set(['getBridgeConfig', 'loadDatabase', 'saveDatabase', 'initializeDatabase']);
+  const peer = '<?= embedded ?>' === 'yes' ? window.top : window.top.opener;
+  const methods = new Set(['getBridgeConfig', 'loadDatabase', 'saveDatabase', 'initializeDatabase', 'bootstrapDashboard']);
   if (!peer || !channel) {
     status.textContent = 'Apri Helpy Finance su GitHub Pages per collegare Google Drive.';
     const link = document.createElement('a');

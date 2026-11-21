@@ -87,42 +87,25 @@ def assemble(source):
 
 
 def prepare_pages(source):
-    source = replace_once(source, TOOLBAR.splitlines()[0], '<section aria-label="Database Google Drive" class="hf-drive-controls" hidden>')
-    source = replace_once(source, '</style>', """      .hf-drive-controls:not([hidden]) {
-        display: grid;
-        gap: 8px;
-        margin-top: 12px;
-      }
+    markup = TOOLBAR.replace(TOOLBAR.splitlines()[0], '<section aria-label="Google Drive" class="hf-drive-controls" hidden>')
+    markup = re.sub(r'  <button[^\n]+id="hf-drive-save"[^\n]+\n', '', markup)
+    markup = markup.replace('role="status" aria-live="polite">Collegamento a Google Drive…</strong>', 'role="status" aria-live="polite" hidden></strong>')
+    markup = markup.replace('</section>', '<a id="hf-drive-auth" href="#" hidden>Autorizza Google</a></section>')
+    source = replace_once(source, TOOLBAR, markup)
+    source = replace_once(source, '</style>', """      .hf-drive-controls > :not([hidden]) { display: block; margin-top: 8px; }
+      .hf-drive-controls a { color: #e4effb; font-size: 12px; }
+      .hf-drive-controls [role="status"] { color: #e4effb; font-size: 12px; }
       .hf-drive-controls button {
         padding: 7px 8px;
         border: 1px solid #ffffff24;
         border-radius: 8px;
         background: #ffffff0e;
         color: inherit;
-        text-align: left;
-        font-size: 11px;
       }
-      .hf-drive-controls button:disabled { opacity: .6; cursor: default; }
-      .hf-drive-controls [role="status"] { color: #c1d0de; font-size: 11px; }
-      @media (min-width: 901px) { .hf-drive-connect-loading { display: none; } }
     </style>""")
     footer = '                  (0, L.jsxs)("footer", {\n                    children: ['
     source = replace_once(source, footer, footer + """
-                      (0, L.jsx)("div", { ref: window.HFGithubDrive.mountControls }),
-""".rstrip())
-    loading = '                            (0, L.jsx)(Jl, {}),\n                            "Caricamento contabilit\\xE0\\u2026",'
-    source = replace_once(source, loading, loading + """
-                            (0, L.jsx)("button", {
-                              className: "secondary hf-drive-connect-loading",
-                              onClick: window.HFGithubDrive.connect,
-                              children: "Collega Google Drive",
-                            }),
-""".rstrip())
-    transport = (ROOT / 'pages/transport.js').read_text(encoding='utf-8')
-    source = replace_once(source, '<strong id="hf-drive-status"', '<button type="button" id="hf-connect">Collega Google Drive</button><strong id="hf-drive-status"')
-    source = replace_once(source, '</section><div id="root"></div>', '</section><div id="root"></div><script>' + transport + '</script>')
-    source = replace_once(source, '    return new Promise((resolve, reject) => {\n      google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[method](...args);\n    });', '    return window.HFGithubDrive.request(method, ...args);')
-    source = replace_once(source, 'Collegamento a Google Drive…</strong>', 'Collega Google Drive per caricare i dati.</strong>')
+                      (0, L.jsx)("div", { ref: window.HFGithubDrive.mountFeedback }),""")
     return source
 
 

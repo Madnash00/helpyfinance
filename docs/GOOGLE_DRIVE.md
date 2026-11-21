@@ -1,6 +1,6 @@
 # Collegare Helpy Finance a Google Drive
 
-La [dashboard](https://madnash00.github.io/helpyfinance/) è pubblicata su GitHub Pages da `main:/docs`. Google Apps Script espone le operazioni sul database JSON esistente su Google Drive. Il browser apre una finestra Google per riutilizzare la sessione autorizzata. Il gateway scambia messaggi con l'origine GitHub Pages e con la singola sessione aperta dalla dashboard.
+La [dashboard](https://madnash00.github.io/helpyfinance/) è pubblicata su GitHub Pages da `main:/docs`. Google Apps Script espone le operazioni sul database JSON esistente su Google Drive. Il frontend apre il canale Google all’avvio, in parallelo al caricamento della dashboard, e legge la revisione con un’unica richiesta. Il browser può richiedere una finestra Google per ripristinare l’autorizzazione. Il gateway scambia messaggi con l'origine GitHub Pages e con la singola sessione aperta dalla dashboard.
 
 ## Aggiornare il frontend
 
@@ -16,7 +16,7 @@ Aggiorna anche il parametro `v` nel riferimento a `pages.js` in `docs/index.html
 
 ## Aggiornare il backend
 
-Aggiorna `Code.gs` e `Gateway.html` nel progetto Apps Script esistente. In **Gestisci deployment** aggiorna il deployment Web App con una nuova versione, con esecuzione come utente che accede all'app. Mantieni l'URL `/exec` usato da `pages/transport.js`, le proprietà del database e i permessi del file Drive.
+Aggiorna `Code.gs` e `Gateway.html` nel progetto Apps Script esistente. In **Gestisci deployment** aggiorna il deployment Web App con una nuova versione, con esecuzione come utente che accede all'app. Mantieni l'URL `/exec` usato da `docs/drive-transport.js`, le proprietà del database e i permessi del file Drive.
 
 ## Configurare una nuova installazione
 
