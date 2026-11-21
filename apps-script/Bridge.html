@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="it">
+<head><meta charset="utf-8"><base target="_top"></head>
+<body>
+<p id="loading" role="status">Apertura di Helpy Finance…</p>
+<script>
+(() => {
+  const watch = new MutationObserver(() => {
+    const seed = document.getElementById('hf-drive-seed');
+    if (!seed || seed.hidden) return;
+    const form = document.createElement('form');
+    const details = document.createElement('details');
+    const summary = document.createElement('summary');
+    const label = document.createElement('label');
+    const textarea = document.createElement('textarea');
+    const submit = document.createElement('button');
+    const status = document.getElementById('hf-drive-status');
+    summary.textContent = 'Incolla un backup JSON';
+    label.textContent = 'Contenuto del backup JSON';
+    textarea.required = true;
+    textarea.rows = 3;
+    textarea.spellcheck = false;
+    textarea.autocomplete = 'off';
+    submit.textContent = 'Importa su Drive';
+    label.append(textarea);
+    details.append(summary, label, submit);
+    form.append(details);
+    seed.after(form);
+    watch.disconnect();
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      let initial;
+      try {
+        const backup = JSON.parse(textarea.value);
+        const state = backup.state ?? backup.data?.state ?? backup.data;
+        if (!Array.isArray(state?.movements) || !Array.isArray(state.annual) ||
+            (!state.movements.length && !state.annual.length)) {
+          throw new Error('Formato del backup Helpy Finance non valido.');
+        }
+        const source = backup.data?.state ? backup.data : backup;
+        initial = { ...source, state };
+      } catch (error) {
+        status.textContent = 'Backup non leggibile. ' + error.message;
+        return;
+      }
+      submit.disabled = true;
+      status.textContent = 'Drive · Inizializzazione in corso…';
+      google.script.run.withSuccessHandler(response => {
+        if (!response?.ok) {
+          status.textContent = 'Inizializzazione non confermata.';
+          submit.disabled = false;
+          return;
+        }
+        textarea.value = '';
+        form.remove();
+        seed.hidden = true;
+        status.textContent = 'Drive · Revisione ' + response.revision + ' · ' +
+          response.data.state.movements.length + ' movimenti importati. Riapri la Web App.';
+      }).withFailureHandler(error => {
+        submit.disabled = false;
+        status.textContent = error.message;
+      }).initializeDatabase(initial);
+    });
+  });
+  watch.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
+})();
+</script>
+<script defer src="https://cdn.jsdelivr.net/gh/Madnash00/helpyfinance@c6341d1aa7d099f61456271b60394bf6aa80add7/apps-script/bridge-payload.js" integrity="sha384-Q5hId2Ylbw1mpkdLiVOt96TPG54HSFU+XOUCNSsge7TqK1mq0eh2LzHFQXXgB17B" crossorigin="anonymous" onerror="document.getElementById('loading').textContent='Caricamento Helpy Finance non riuscito.'"></script>
+</body>
+</html>
