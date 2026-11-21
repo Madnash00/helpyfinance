@@ -31,6 +31,7 @@ function doGet(event) {
   const channel = String(event?.parameter?.channel || '');
   template.channel = /^[0-9a-f-]{36}$/.test(channel) ? channel : '';
   template.embedded = template.channel && event?.parameter?.transport === 'iframe' ? 'yes' : '';
+  template.hosted = template.channel && event?.parameter?.transport === 'host' ? 'yes' : '';
   const page = template.evaluate()
     .setTitle('Helpy Finance · Google Drive')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');

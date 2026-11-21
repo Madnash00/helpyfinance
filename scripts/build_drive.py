@@ -90,7 +90,6 @@ def prepare_pages(source):
     markup = TOOLBAR.replace(TOOLBAR.splitlines()[0], '<section aria-label="Google Drive" class="hf-drive-controls" hidden>')
     markup = re.sub(r'  <button[^\n]+id="hf-drive-save"[^\n]+\n', '', markup)
     markup = markup.replace('role="status" aria-live="polite">Collegamento a Google Drive…</strong>', 'role="status" aria-live="polite" hidden></strong>')
-    markup = markup.replace('</section>', '<a id="hf-drive-auth" href="#" hidden>Autorizza Google</a></section>')
     source = replace_once(source, TOOLBAR, markup)
     source = replace_once(source, '</style>', """      .hf-drive-controls > :not([hidden]) { display: block; margin-top: 8px; }
       .hf-drive-controls a { color: #e4effb; font-size: 12px; }
@@ -106,15 +105,6 @@ def prepare_pages(source):
     footer = '                  (0, L.jsxs)("footer", {\n                    children: ['
     source = replace_once(source, footer, footer + """
                       (0, L.jsx)("div", { ref: window.HFGithubDrive.mountFeedback }),""")
-    loading = '                            (0, L.jsx)(Jl, {}),\n                            "Caricamento contabilit\\xE0\\u2026",'
-    source = replace_once(source, loading, loading + """
-                            (0, L.jsx)("a", {
-                              ref: window.HFGithubDrive.mountLoading,
-                              href: "#",
-                              hidden: true,
-                              onClick: window.HFGithubDrive.authorize,
-                              children: "Autorizza Google",
-                            }),""")
     return source
 
 
