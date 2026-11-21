@@ -1673,7 +1673,7 @@
       .ruleRow {
         min-width: 830px;
         display: grid;
-        grid-template-columns: 1.05fr 0.8fr 0.72fr 1.2fr 65px 1fr 30px;
+        grid-template-columns: 1.05fr 0.8fr 0.72fr 1.2fr 65px 1fr 110px;
         align-items: center;
         gap: 6px;
         border-bottom: 1px solid var(--line);
@@ -1712,6 +1712,19 @@
         font-weight: 800;
         letter-spacing: 0.04em;
         text-transform: uppercase;
+      }
+      .ruleActions {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 6px;
+      }
+      .applyRule {
+        padding: 5px 8px;
+      }
+      .applyRule:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
       }
       .deleteRule {
         border-color: #e0a7af;

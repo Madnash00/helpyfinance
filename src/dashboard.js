@@ -41015,6 +41015,22 @@ Error generating stack: ` +
                 : t.includes(r)
             : !1;
         }
+        function hfClassifyMovement(movement, rule) {
+          return {
+            ...movement,
+            keyword: rule.keyword,
+            type: rule.type,
+            category: rule.category,
+            vat: rule.vat,
+            taxable: movement.amount / (1 + rule.vat),
+            project: rule.project,
+          };
+        }
+        function hfAmountTone(amount) {
+          if (amount > 0) return "good";
+          if (amount < 0) return "bad";
+          return "neutral";
+        }
         function dM(e, a) {
           let t = e.filter((r) => r.date.slice(0, 4) === a && r.keyword);
           return [
@@ -41179,7 +41195,7 @@ Error generating stack: ` +
             n = document.createElement("a");
           ((n.href = r), (n.download = a), n.click(), URL.revokeObjectURL(r));
         }
-        function nd({ label: e, value: a, note: t, tone: r, Icon: n }) {
+        function nd({ label: e, value: a, note: t, tone: r, Icon: n, valueTone }) {
           return (0, L.jsxs)("article", {
             className: "kpi",
             children: [
@@ -41190,7 +41206,7 @@ Error generating stack: ` +
               (0, L.jsxs)("div", {
                 children: [
                   (0, L.jsx)("small", { children: e }),
-                  (0, L.jsx)("strong", { children: a }),
+                  (0, L.jsx)("strong", { className: valueTone, children: a }),
                   (0, L.jsx)("em", { className: r, children: t }),
                 ],
               }),
@@ -41214,6 +41230,7 @@ Error generating stack: ` +
             [planningModal, setPlanningModal] = (0, ze.useState)(null),
             [U, G] = (0, ze.useState)(""),
             [P, te] = (0, ze.useState)({}),
+            [ruleDrafts, setRuleDrafts] = (0, ze.useState)({}),
             [pe, le] = (0, ze.useState)({}),
             [Se, me] = (0, ze.useState)(""),
             [be, de] = (0, ze.useState)(null),
@@ -41573,6 +41590,13 @@ Error generating stack: ` +
             (r(D), localStorage.setItem("hf-state", JSON.stringify(D)));
           }
           function it(D, W, ge) {
+            if (ruleDrafts[D]?.some(rule => rule.id === W)) {
+              setRuleDrafts(current => ({
+                ...current,
+                [D]: current[D].map(rule => rule.id === W ? { ...rule, ...ge } : rule),
+              }));
+              return;
+            }
             te((Ce) => {
               let Le = {
                 ...Ce,
@@ -41586,31 +41610,54 @@ Error generating stack: ` +
               );
             });
           }
-          function Er(D) {
-            (te((W) => {
-              let ge = {
-                ...W,
-                [D]: [
-                  ...(W[D] || []),
-                  {
-                    id: Uu([D, Date.now()]),
-                    keyword: "",
-                    match: "contains",
-                    type: "Uscite",
-                    category: "Da classificare",
-                    vat: 0,
-                    project: "Da attribuire",
-                  },
-                ],
-              };
-              return (
-                localStorage.setItem("hf-keyword-rules", JSON.stringify(ge)),
-                ge
-              );
-            }),
-              me("Nuova regola aggiunta"));
+          function Er(year) {
+            const draft = {
+              id: crypto.randomUUID(),
+              keyword: "",
+              match: "contains",
+              type: "Uscite",
+              category: "Da classificare",
+              vat: 0,
+              project: "Da attribuire",
+            };
+            setRuleDrafts(current => ({
+              ...current,
+              [year]: [draft, ...(current[year] || [])],
+            }));
+          }
+          function removeRuleDraft(year, id) {
+            setRuleDrafts(current => ({
+              ...current,
+              [year]: current[year].filter(rule => rule.id !== id),
+            }));
+          }
+          function canApplyRule(rule) {
+            return Boolean(rule.keyword.trim() && rule.category.trim()) &&
+              Number.isFinite(rule.vat) && rule.vat >= 0 && rule.vat <= 1;
+          }
+          function applyRegistryRule(year, draft) {
+            if (!t || !canApplyRule(draft)) return;
+            const rule = { ...draft, keyword: draft.keyword.trim(), category: draft.category.trim() };
+            // Give the last applied rule priority for both existing movements and future imports.
+            const rules = { ...P, [year]: [rule, ...(P[year] || [])] };
+            let count = 0;
+            const movements = t.movements.map(movement => {
+              if (movement.date.slice(0, 4) !== year || iM(movement) ||
+                  !cM(rule, movement.description || movement.keyword || "")) return movement;
+              count++;
+              return hfClassifyMovement(movement, rule);
+            });
+            localStorage.setItem("hf-keyword-rules", JSON.stringify(rules));
+            te(rules);
+            if (count) mt({ ...t, movements });
+            removeRuleDraft(year, draft.id);
+            me(count === 1 ? "1 movimento allineato" : `${count} movimenti allineati`);
           }
           function kl(D, W) {
+            if (ruleDrafts[D]?.some(rule => rule.id === W)) {
+              removeRuleDraft(D, W);
+              return;
+            }
             (te((ge) => {
               let Ce = {
                 ...ge,
@@ -41648,27 +41695,6 @@ Error generating stack: ` +
               );
             });
           }
-          function kt(D) {
-            if (!t || D === "all") return;
-            let W = new Map(
-                t.annual
-                  .find((We) => String(We.year) === D)
-                  ?.rows.map((We) => [We.label, We.value]) || [],
-              ),
-              ge = rd(pe, D),
-              Ce = ge ? pe[ge] : void 0,
-              Le = Object.fromEntries(
-                Nu.map(([We, , ca]) => {
-                  let fr = [We, ...ca].find((nn) => W.has(nn)),
-                    Ca = fr ? W.get(fr) || 0 : Ce?.[We]?.budget || 0;
-                  return [We, { budget: Ca, forecast: Ca }];
-                }),
-              ),
-              ke = { ...pe, [D]: Le };
-            (le(ke),
-              localStorage.setItem("hf-planning", JSON.stringify(ke)),
-              me(`Budget e forecast ${D} ripristinati`));
-          }
           function ir(D) {
             t &&
               (mt({
@@ -41699,9 +41725,6 @@ Error generating stack: ` +
               R(null),
               me("Movimento eliminato"));
           }
-          function br() {
-            (d("all"), h("all"), p("all"), v("all"), g(""));
-          }
           async function Il(D) {
             try {
               let W = EC(await D.arrayBuffer(), D.name),
@@ -41717,17 +41740,7 @@ Error generating stack: ` +
                       Ca = fr
                         ? P[fr].find((nn) => cM(nn, We.description))
                         : void 0;
-                    return Ca
-                      ? {
-                          ...We,
-                          keyword: Ca.keyword,
-                          type: Ca.type,
-                          category: Ca.category,
-                          vat: Ca.vat,
-                          taxable: We.amount / (1 + Ca.vat),
-                          project: Ca.project,
-                        }
-                      : We;
+                    return Ca ? hfClassifyMovement(We, Ca) : We;
                   })
                   .filter((We) => {
                     let ca = NM(We);
@@ -41845,6 +41858,7 @@ Error generating stack: ` +
                     (0, L.jsx)(nd, {
                       label: "Risultato gestionale",
                       value: wa.format(M.result),
+                      valueTone: hfAmountTone(M.result),
                       note: hfDeltas(M.result,budgetMON,forecastMON),
                       tone: M.result >= 0 ? "good" : "bad",
                       Icon: An,
@@ -41852,6 +41866,7 @@ Error generating stack: ` +
                     (0, L.jsx)(nd, {
                       label: "Disponibilit\xE0 bancaria",
                       value: wa.format(M.balance),
+                      valueTone: hfAmountTone(M.balance),
                       note: M.date
                         ? `Saldo al ${Pu.format(new Date(M.date))}`
                         : "Non disponibile",
@@ -42407,11 +42422,6 @@ Error generating stack: ` +
                       ],
                     }),
                     (0, L.jsxs)("button", {
-                      className: "secondary",
-                      onClick: br,
-                      children: [(0, L.jsx)(Jl, { size: 14 }), "Reset"],
-                    }),
-                    (0, L.jsxs)("button", {
                       className: "primary",
                       onClick: () =>
                         R({
@@ -42619,14 +42629,6 @@ Error generating stack: ` +
                                 children:
                                   "Entrambi i valori sono indipendenti per anno. Il consuntivo deriva dai movimenti categorizzati.",
                               }),
-                            ],
-                          }),
-                          (0, L.jsxs)("button", {
-                            className: "secondary",
-                            onClick: () => kt(f),
-                            children: [
-                              (0, L.jsx)(Jl, { size: 14 }),
-                              "Ripristina",
                             ],
                           }),
                         ],
@@ -42849,7 +42851,8 @@ Error generating stack: ` +
                 }),
               ],
             }),
-            vi = f === "all" ? [] : P[f] || [],
+            draftsForYear = ruleDrafts[f] || [],
+            vi = f === "all" ? [] : [...draftsForYear, ...(P[f] || [])],
             ld = (0, L.jsxs)("div", {
               className: "registry",
               children: [
@@ -42905,7 +42908,7 @@ Error generating stack: ` +
                                 (0, L.jsx)("span", {}),
                               ],
                             }),
-                            vi.map((D) =>
+                            vi.map((D, index) =>
                               (0, L.jsxs)(
                                 "div",
                                 {
@@ -42986,10 +42989,12 @@ Error generating stack: ` +
                                       min: "0",
                                       max: "100",
                                       step: ".01",
-                                      value: Number((D.vat * 100).toFixed(2)),
+                                      value: D.vat === "" ? "" : Number((D.vat * 100).toFixed(2)),
                                       onChange: (W) =>
                                         it(f, D.id, {
-                                          vat: Number(W.target.value) / 100,
+                                          vat: index < draftsForYear.length && W.target.value === ""
+                                            ? ""
+                                            : Number(W.target.value) / 100,
                                         }),
                                     }),
                                     (0, L.jsx)("select", {
@@ -43007,11 +43012,25 @@ Error generating stack: ` +
                                         ),
                                       ),
                                     }),
-                                    (0, L.jsx)("button", {
-                                      className: "iconBtn deleteRule",
-                                      onClick: () => kl(f, D.id),
-                                      title: "Elimina regola",
-                                      children: (0, L.jsx)($f, { size: 13 }),
+                                    (0, L.jsxs)("div", {
+                                      className: "ruleActions",
+                                      children: [
+                                        index < draftsForYear.length &&
+                                          (0, L.jsx)("button", {
+                                            type: "button",
+                                            className: "primary applyRule",
+                                            disabled: !canApplyRule(D),
+                                            onClick: () => applyRegistryRule(f, D),
+                                            children: "Aggiorna",
+                                          }),
+                                        (0, L.jsx)("button", {
+                                          type: "button",
+                                          className: "iconBtn deleteRule",
+                                          onClick: () => kl(f, D.id),
+                                          title: "Elimina regola",
+                                          children: (0, L.jsx)($f, { size: 13 }),
+                                        }),
+                                      ],
                                     }),
                                   ],
                                 },
@@ -43455,15 +43474,6 @@ Error generating stack: ` +
                           }),
                         ],
                       }),
-                      (o !== "all" ||
-                        c !== "all" ||
-                        m !== "all" ||
-                        S !== "all" ||
-                        x) &&
-                        (0, L.jsxs)("button", {
-                          onClick: br,
-                          children: [(0, L.jsx)(hl, {}), "Azzera"],
-                        }),
                       (0, L.jsxs)("span", {
                         children: [
                           (0, L.jsx)("i", {}),
